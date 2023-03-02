@@ -12,4 +12,5 @@ buildNumber.properties
 .DS_Store
 .idea
 java_pid*
+*.hprof
 *.iml
