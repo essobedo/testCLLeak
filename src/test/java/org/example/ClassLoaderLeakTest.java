@@ -42,12 +42,12 @@ class ClassLoaderLeakTest {
     @BeforeEach
     void configure() {
         cl = new CustomClassLoader();
-        Thread.currentThread().setContextClassLoader(cl);
     }
 
     @AfterEach
     void clean() throws Exception {
         cl.close();
+        cl = null;
     }
 
     @RepeatedTest(100)
