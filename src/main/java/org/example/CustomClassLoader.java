@@ -17,6 +17,7 @@
 package org.example;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -47,5 +48,17 @@ public class CustomClassLoader extends URLClassLoader {
                 .map(toURL).collect(Collectors.toList());
         l.add(toURL.apply(new File("./target/classes").getAbsoluteFile().toURI()));
         return l.toArray(URL[]::new);
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            // Remain in the same CL to prevent filling again the Class#classValueMap
+            loadClass("org.example.Main").getMethod("clean").invoke(null);
+        } catch (Exception e) {
+            throw new IOException(e);
+        } finally {
+            super.close();
+        }
     }
 }
