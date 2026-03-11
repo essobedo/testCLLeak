@@ -1,0 +1,66 @@
+name: hello world scheduler
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'The number of days to wait before running the workflow'
+        required: true
+        default: "0"
+        type: string
+      at:
+         description: 'The time to run the workflow (HH:mm) UTC time'
+         required: true
+         default: "22:00"
+         type: string
+      dry_run:
+        description: 'To enable the dry run'
+        default: false
+        type: boolean
+      name:
+        description: 'The name to greet'
+        required: true
+        default: 'World'
+        type: string
+
+jobs:
+    my-job:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v6
+        with:
+          token: '${{ secrets.WORKFLOW_TOKEN }}'
+      - name: 'Setup yq'
+        uses: dcarbone/install-yq-action@v1
+      - name: "Schedule next run"
+        id: schedule
+        env:
+          DAYS: ${{ github.event.inputs.days }}
+          AT: ${{ github.event.inputs.at }}
+        run: |
+          echo "Scheduling next run in ${{ env.DAYS }} days at ${{ env.AT }} UTC time" >> $GITHUB_STEP_SUMMARY
+          MINUTES="${AT:3:2}"
+          HOURS="${AT:0:2}"
+          DAY_OF_MONTH="$(date -d '+${{ env.DAYS }} days' +%d)"
+          MONTH="$(date -d '+${{ env.DAYS }} days' +%m)"
+          CRON_SCHEDULE="${MINUTES##0} ${HOURS##0} ${DAY_OF_MONTH##0} ${MONTH##0} *"
+          echo "Corresponding cron expression: $CRON_SCHEDULE" >> $GITHUB_STEP_SUMMARY
+          echo "cron=${CRON_SCHEDULE}" >> $GITHUB_OUTPUT
+      - name: "Update workflow launcher values"
+        run: yq '${{ env.YQ_CMD }}' -i .github/workflows/hello-world-launcher.yaml
+        env:
+          YQ_CMD: >-
+            .on.schedule[0].cron = "${{ steps.schedule.outputs.cron }}"
+            | .env.DRY_RUN = ${{ inputs.dry_run }}
+            | .env.NAME = "${{ inputs.name }}"
+      - name: "Commit and push changes"
+        run: |  
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/hello-world-launcher.yaml
+          COMMIT_MESSAGE="chore(build): Schedule next run for $(date -d '+${{ env.DAYS }} days' +%F) at ${{ env.AT }} UTC time"
+          git commit -m "${COMMIT_MESSAGE}"
+          git push
+        env:
+          DAYS: ${{ github.event.inputs.days }}
+          AT: ${{ github.event.inputs.at }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}

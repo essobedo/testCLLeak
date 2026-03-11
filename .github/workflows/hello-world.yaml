@@ -1,0 +1,22 @@
+name: hello-world
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'To enable the dry run'
+        default: false
+        type: boolean
+      name:
+        description: 'The name to greet'
+        required: true
+        default: 'World'
+        type: string
+jobs:
+  my-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: my-step
+        env:
+          NAME: ${{ inputs.name }}
+          DRY_RUN: ${{ inputs.dry_run == true && 'dry run mode' || 'real mode' }}
+        run: echo "Hello ${{ env.NAME }}! at $(date) in ${{ env.DRY_RUN }}" >> $GITHUB_STEP_SUMMARY
