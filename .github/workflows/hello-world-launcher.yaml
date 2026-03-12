@@ -1,13 +1,13 @@
 name: hello-world-launcher
 on:
   schedule:
-    - cron: "10 10 12 3 *"
+    - cron: "0 10 14 3 *"
   workflow_dispatch:
 permissions:
   actions: write
 env:
   DRY_RUN: false
-  NAME: Real
+  NAME: World
 jobs:
   my-job:
     runs-on: ubuntu-latest
